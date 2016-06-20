@@ -12,15 +12,15 @@ if [[ -z "file" ]]; then
     exit -1
 fi
 
-first_block=true
-first_line=true
-first_comment_block=false
-global_settings=false
-code_block=false
-tangle=true
+first_block=yes
+first_line=yes
+first_comment_block=no
+global_settings=no
+code_block=no
+tangle=yes
 tanglefile=/dev/stdout
 mkdirp=
-append=true
+append=yes
 
 function set_params() {
     params=$(sed 's/^```//' <<< $@)
@@ -59,15 +59,15 @@ function reset(){
 while read line
 do
 
-    if [ "$first_line" = true ] && [ $(sed -n '/^<!--/p' <<< $line) ]; then
-	first_comment_block=true
-	global_settings=true
+    if [ "$first_line" = yes ] && [ $(sed -n '/^<!--/p' <<< $line) ]; then
+	first_comment_block=yes
+	global_settings=yes
 	continue
     fi
 
-    if [ "$first_comment_block" = true ]; then
+    if [ "$first_comment_block" = yes ]; then
 	if [ $(sed -n '/^-->/p' <<< $line) ]; then
-	    first_comment_block=false
+	    first_comment_block=no
 	    continue
 	fi
 	set_params $line
@@ -75,22 +75,22 @@ do
     fi
 
     if ! [[ $(sed -n '/^```/p' <<< $line) ]]; then
-	if [ "$code_block" = true ] && [ "$tangle" = true ]; then
+	if [ "$code_block" = yes ] && [ "$tangle" = yes ]; then
 	    echo $line >> $tanglefile
 	fi
 	continue
     fi
 
-    if [ "$code_block" = true ]; then
-	code_block=false
+    if [ "$code_block" = yes ]; then
+	code_block=no
 	continue
     fi
 
     reset
     set_params "$line"
-    code_block=true
+    code_block=yes
 
-    if [ "$mkdirp" = true ]; then
+    if [ "$mkdirp" = yes ]; then
 	if [ "$tanglefile" = "/dev/stdout" ]; then
 	    continue
 	fi
@@ -102,8 +102,8 @@ do
 	touch "$tanglefile"
     fi
     
-    if [ "$append" != true ] || [ "$first_block" == true ]; then
+    if [ "$first_block" == yes ] || [ "$append" != yes ] ; then
 	printf '' > ${tanglefile}
     fi
-    first_block=false
+    first_block=no
 done < $file
