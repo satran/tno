@@ -12,10 +12,15 @@ if [[ -z "file" ]]; then
     exit -1
 fi
 
-tanglefile=/dev/stdout
-mkdirp=
-append=false
-code_block=false
+first_block=true
+
+function reset(){
+    tanglefile=/dev/stdout
+    mkdirp=
+    append=true
+    code_block=false
+}
+
 while read line
 do
     if ! [[ $(sed -n '/^```/p' <<< $line) ]]; then
@@ -30,6 +35,7 @@ do
 	continue
     fi
 
+    reset
     code_block=true
     params=$(sed 's/^```//' <<< $line)
     for param in $params
@@ -58,7 +64,8 @@ do
 	touch "$tanglefile"
     fi
     
-    if [ "$append" != true ]; then
+    if [ "$append" != true ] || [ "$first_block" == true ]; then
 	printf '' > ${tanglefile}
     fi
+    first_block=false
 done < $file
