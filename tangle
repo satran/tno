@@ -13,13 +13,14 @@ if [[ -z "file" ]]; then
 fi
 
 first_block=true
-
-function reset(){
-    tanglefile=/dev/stdout
-    mkdirp=
-    append=true
-    code_block=false
-}
+first_line=true
+first_comment_block=false
+global_settings=false
+code_block=false
+tangle=true
+tanglefile=/dev/stdout
+mkdirp=
+append=true
 
 function set_params() {
     params=$(sed 's/^```//' <<< $@)
@@ -35,14 +36,46 @@ function set_params() {
 		      ;;
 	    'append') append=$opt
 		      ;;
+	    'tangle') tangle=$opt
+		      ;;
 	esac
     done
 }
 
+function set_as_default(){
+    d_tanglefile=$tanglefile
+    d_mkdirp=$mkdirp
+    d_append=$append
+    d_tangle=$tangle
+}
+
+function reset(){
+    tanglefile=$d_tanglefile
+    mkdirp=$d_mkdirp
+    append=$d_append
+    tangle=$d_tangle
+}
+
 while read line
 do
+
+    if [ "$first_line" = true ] && [ $(sed -n '/^<!--/p' <<< $line) ]; then
+	first_comment_block=true
+	global_settings=true
+	continue
+    fi
+
+    if [ "$first_comment_block" = true ]; then
+	if [ $(sed -n '/^-->/p' <<< $line) ]; then
+	    first_comment_block=false
+	    continue
+	fi
+	set_params $line
+	set_as_default
+    fi
+
     if ! [[ $(sed -n '/^```/p' <<< $line) ]]; then
-	if [ "$code_block" = true ]; then
+	if [ "$code_block" = true ] && [ "$tangle" = true ]; then
 	    echo $line >> $tanglefile
 	fi
 	continue
