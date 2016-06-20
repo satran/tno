@@ -21,6 +21,24 @@ function reset(){
     code_block=false
 }
 
+function set_params() {
+    params=$(sed 's/^```//' <<< $@)
+    for param in $params
+    do
+	IFS=':' read arg opt <<< "$param"
+	case $arg in
+	    # This weird evaluation is to evaluate variables like
+	    # HOME that might be used for the tangle file names
+	    'file') tanglefile=$(echo $(eval "echo $opt"))
+		    ;;
+	    'mkdirp') mkdirp=$opt
+		      ;;
+	    'append') append=$opt
+		      ;;
+	esac
+    done
+}
+
 while read line
 do
     if ! [[ $(sed -n '/^```/p' <<< $line) ]]; then
@@ -36,22 +54,9 @@ do
     fi
 
     reset
+    set_params "$line"
     code_block=true
-    params=$(sed 's/^```//' <<< $line)
-    for param in $params
-    do
-	IFS=':' read arg opt <<< "$param"
-	case $arg in
-	    # This weird evaluation is to evaluate variables like
-	    # HOME that might be used for the tangle file names
-	    'file') tanglefile=$(echo $(eval "echo $opt"))
-		    ;;
-	    'mkdirp') mkdirp=$opt
-		      ;;
-	    'append') append=$opt
-		      ;;
-	esac
-    done
+
     if [ "$mkdirp" = true ]; then
 	if [ "$tanglefile" = "/dev/stdout" ]; then
 	    continue
