@@ -1,0 +1,64 @@
+#!/bin/sh
+#
+# tangle is a command that is used to extract code snippets from
+# various text files and writes to either stdout or to the file
+# attribute.
+set -e
+
+file=$1
+
+if [[ -z "file" ]]; then
+    printf "usage: %s <file>" $(basename $0)
+    exit -1
+fi
+
+tanglefile=/dev/stdout
+mkdirp=
+append=false
+code_block=false
+while read line
+do
+    if ! [[ $(sed -n '/^```/p' <<< $line) ]]; then
+	if [ "$code_block" = true ]; then
+	    echo $line >> $tanglefile
+	fi
+	continue
+    fi
+
+    if [ "$code_block" = true ]; then
+	code_block=false
+	continue
+    fi
+
+    code_block=true
+    params=$(sed 's/^```//' <<< $line)
+    for param in $params
+    do
+	IFS=':' read arg opt <<< "$param"
+	case $arg in
+	    # This weird evaluation is to evaluate variables like
+	    # HOME that might be used for the tangle file names
+	    'file') tanglefile=$(echo $(eval "echo $opt"))
+		    ;;
+	    'mkdirp') mkdirp=$opt
+		      ;;
+	    'append') append=$opt
+		      ;;
+	esac
+    done
+    if [ "$mkdirp" = true ]; then
+	if [ "$tanglefile" = "/dev/stdout" ]; then
+	    continue
+	fi
+	dir=$(dirname "$tanglefile")
+	mkdir -p "$dir"
+    fi
+
+    if ! [ -e "$tanglefile" ]; then
+	touch "$tanglefile"
+    fi
+    
+    if [ "$append" != true ]; then
+	printf '' > ${tanglefile}
+    fi
+done < $file
