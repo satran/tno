@@ -19,7 +19,7 @@ global_settings=no
 code_block=no
 tangle=yes
 tanglefile=/dev/stdout
-mkdirp=
+mkdirp=no
 append=yes
 
 function set_params() {
@@ -56,9 +56,8 @@ function reset(){
     tangle=$d_tangle
 }
 
-while read line
+while read -r line
 do
-
     if [ "$first_line" = yes ] && [ $(sed -n '/^<!--/p' <<< $line) ]; then
 	first_comment_block=yes
 	global_settings=yes
@@ -75,7 +74,7 @@ do
     fi
 
     if ! [[ $(sed -n '/^```/p' <<< $line) ]]; then
-	if [ "$code_block" = yes ] && [ "$tangle" = yes ]; then
+	if [ "$code_block" = yes ] && [ "$tangle" != no ]; then
 	    echo $line >> $tanglefile
 	fi
 	continue
@@ -86,7 +85,10 @@ do
 	continue
     fi
 
-    reset
+    if [ "$code_block" = no ]; then
+	reset
+    fi
+
     set_params "$line"
     code_block=yes
 
