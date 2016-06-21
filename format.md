@@ -5,12 +5,16 @@ The idea comes from org-mode of emacs where you can create files using
 literate programming. The scripts use markdown as the base
 format. Scripts can be embedded within code quotes.
 
-``` sh file:$HOME/.bashrc
+```
+tangle <file-name>
+```
+
+```shell file:$HOME/.zshrc append:no
 PATH=$PATH:${HOME}/bin
 PS1="\w \$"
 ```
 
-The above example shows how I track .bashrc file using the text
+The above example shows how I track .zshrc file using the text
 files. Executing `tangle format.md` it would create a file named
 `.bashrc` under your `$HOME` directory. 
 
