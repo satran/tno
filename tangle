@@ -23,7 +23,8 @@ mkdirp=no
 append=yes
 
 function set_params() {
-    params=$(sed 's/^```//' <<< $@)
+    params=$(sed 's/<!---@*//' <<< $@)
+    params=$(sed 's/-->//' <<< $params)
     for param in $params
     do
 	IFS=':' read arg opt <<< "$param"
@@ -61,31 +62,30 @@ set_defaults
 while read -r line
 do
     # Comment block
-    if [[ $(sed -n '/^<!--/p' <<< $line) ]]; then
-	reset
+    if [[ $(sed -n '/^<!---/p' <<< $line) ]]; then
 	comment_block=yes
-	line=$(sed 's/^```//' <<< $line)
-	if [[ $(sed -n '/^<!--@/p' <<< $line) ]]; then
+	line=$(sed 's/^<!---//' <<< $line)
+	if [[ $(sed -n '/^<!---@/p' <<< $line) ]]; then
 	    global_block=yes
 	    global_settings=yes
 	fi
     fi
 
     if [[ "$comment_block" = yes ]]; then
-	if [[ $(sed -n '/^-->/p' <<< $line) ]] || [[ $(sed -n '/$-->[:space:]*/p' <<< $line) ]]; then
-	    comment_block=no
-	    global_block=no
-	    continue
-	fi
 	set_params $line
 	if [ "$global_block" = yes ]; then
 	    set_defaults
+	fi
+	if [[ $(sed -n '/-->/p' <<< $line) ]]; then
+	    comment_block=no
+	    global_block=no
+	    continue
 	fi
     fi
 
     # Code block
     if ! [[ $(sed -n '/^```/p' <<< $line) ]]; then
-	if [ "$code_block" = yes ] && [ "$tangle" != no ]; then
+	if [ "$code_block" = yes ] && [ "$tangle" != no ]; then 
 	    echo $line >> $tanglefile
 	fi
 	continue
@@ -93,6 +93,7 @@ do
 
     if [ "$code_block" = yes ]; then
 	code_block=no
+	reset
 	continue
     fi
 
