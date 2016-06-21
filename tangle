@@ -13,8 +13,8 @@ if [[ -z "file" ]]; then
 fi
 
 first_block=yes
-first_line=yes
-first_comment_block=no
+comment_block=no
+global_block=no
 global_settings=no
 code_block=no
 tangle=yes
@@ -60,21 +60,30 @@ set_defaults
 
 while read -r line
 do
-    if [ "$first_line" = yes ] && [ $(sed -n '/^<!--/p' <<< $line) ]; then
-	first_comment_block=yes
-	global_settings=yes
-	continue
+    # Comment block
+    if [[ $(sed -n '/^<!--/p' <<< $line) ]]; then
+	reset
+	comment_block=yes
+	line=$(sed 's/^```//' <<< $line)
+	if [[ $(sed -n '/^<!--@/p' <<< $line) ]]; then
+	    global_block=yes
+	    global_settings=yes
+	fi
     fi
 
-    if [[ "$first_comment_block" = yes ]]; then
-	if [ $(sed -n '/^-->/p' <<< $line) ]; then
-	    first_comment_block=no
+    if [[ "$comment_block" = yes ]]; then
+	if [[ $(sed -n '/^-->/p' <<< $line) ]] || [[ $(sed -n '/$-->[:space:]*/p' <<< $line) ]]; then
+	    comment_block=no
+	    global_block=no
 	    continue
 	fi
 	set_params $line
-	set_defaults
+	if [ "$global_block" = yes ]; then
+	    set_defaults
+	fi
     fi
 
+    # Code block
     if ! [[ $(sed -n '/^```/p' <<< $line) ]]; then
 	if [ "$code_block" = yes ] && [ "$tangle" != no ]; then
 	    echo $line >> $tanglefile
@@ -87,11 +96,6 @@ do
 	continue
     fi
 
-    if [ "$code_block" = no ]; then
-	reset
-    fi
-
-    set_params "$line"
     code_block=yes
 
     if [ "$mkdirp" = yes ]; then
@@ -105,7 +109,7 @@ do
     if ! [ -e "$tanglefile" ] && [ "$tanglefile" != '' ]; then
 	touch "$tanglefile"
     fi
-    
+
     if [ "$first_block" == yes ] || [ "$append" != yes ] ; then
 	printf '' > ${tanglefile}
     fi

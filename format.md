@@ -9,7 +9,8 @@ format. Scripts can be embedded within code quotes.
 tangle <file-name>
 ```
 
-```shell file:$HOME/.zshrc append:no
+<!--- shell file:$HOME/.zshrc append:no -->
+```
 PATH=$PATH:${HOME}/bin
 PS1="\w \$"
 ```
