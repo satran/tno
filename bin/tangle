@@ -20,7 +20,7 @@ code_block=no
 tangle=yes
 tanglefile=/dev/stdout
 mkdirp=no
-append=yes
+append=no
 
 function set_params() {
     params=$(sed 's/<!---@*//' <<< $@)
@@ -86,7 +86,7 @@ do
     # Code block
     if ! [[ $(sed -n '/^```/p' <<< $line) ]]; then
 	if [ "$code_block" = yes ] && [ "$tangle" != no ]; then 
-	    echo $line >> $tanglefile
+	    echo "$line" >> $tanglefile
 	fi
 	continue
     fi
