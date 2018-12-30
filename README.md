@@ -11,4 +11,4 @@ A task can be of different stages. The most common stages are:
 - open, represented by [ ]
 - done is represented by [x]
 
-This is the basics of tasks. More information can be found in its [specification](tasks.txt).
+This is the basics of tasks. More information can be found in its [specification](tasks.md).
